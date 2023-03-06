@@ -1,14 +1,14 @@
 model:
   base_learning_rate: 4.5e-06
-  target: models.stage1_dynamic.dqvae_dual.DualGrainVQModel
+  target: models.stage1_dynamic.dqvae_triple.TripleGrainVQModel
   params:
     encoderconfig:
-      target: modules.dynamic_modules.Encoder_DualGrain.DualGrainEncoder
+      target: modules.dynamic_modules.Encoder_TripleGrain.TripleGrainEncoder
       params:
         ch: 128
-        ch_mult: [1,1,2,2,4]
+        ch_mult: [1,1,2,2,4,4]
         num_res_blocks: 2
-        attn_resolutions: [16, 32]
+        attn_resolutions: [8, 16, 32]
         dropout: 0.0
         resamp_with_conv: true
         in_channels: 3
@@ -17,7 +17,7 @@ model:
         router_config:
           target: modules.dynamic_modules.Router.MultipleGrainEntropyRouter
           params:
-            num_splits: 2
+            num_splits: 3
     decoderconfig:
       target: modules.dynamic_modules.Decoder_extrapos.Decoder
       params:
@@ -52,11 +52,13 @@ model:
         disc_loss: hinge
         disc_weight_max: 0.75
         budget_loss_config:
-          target: modules.dynamic_modules.loss_budget.BudgetConstraint_RatioMSE_DualGrain
+          target: modules.dynamic_modules.loss_budget.BudgetConstraint_NormedSeperateRatioMSE_TripleGrain
           params:
-            target_ratio: 0.5
+            target_fine_ratio: 0.075
+            target_median_ratio: 0.625
             gamma: 10.0
-            min_grain_size: 16
+            min_grain_size: 8
+            median_grain_size: 16
             max_grain_size: 32
     vqconfig:
       target: modules.vector_quantization.quantize2_mask.VectorQuantize2
@@ -75,7 +77,7 @@ model:
     monitor: val_rec_loss
     warmup_epochs: 0.1
     scheduler_type: linear-warmup_cosine-decay
-    entropy_patch_size: 16 # maximum patch size of all granularities
+    entropy_patch_size: 32 # maximum patch size of all granularities
     image_size: 256
 
 data:

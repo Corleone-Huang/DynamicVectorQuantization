@@ -2,37 +2,39 @@ import torch
 import torch.nn as nn
 
 
-class DualGrainEntropyRouter(nn.Module):
-    def __init__(self):
+class MultipleGrainEntropyRouter(nn.Module):
+    def __init__(self, num_splits):
         super().__init__()
+        self.num_splits = num_splits
         self.gate = nn.Sequential(
-                nn.Linear(1, 2),
+                nn.Linear(1, 2 * self.num_splits),
                 nn.ReLU(inplace=True),
-                nn.Linear(2, 2),
+                nn.Linear(2 * self.num_splits, self.num_splits),
             )
 
-    def forward(self, h_fine, h_coarse, entropy):
+    def forward(self, h_fine=None, h_coarse=None, h_median=None, entropy=None):
         gate = self.gate(entropy.unsqueeze(-1))
         return gate
 
 class DualGrainHybridRouter(nn.Module):
     def __init__(self, num_channels, normalization_type="none", gate_type="1layer-fc"):
         super().__init__()
+        self.num_splits = 2
         self.gate_pool = nn.AvgPool2d(2, 2)
         self.gate_type = gate_type
         if gate_type == "1layer-fc":
-            self.gate = nn.Linear(num_channels * 2, 2)
+            self.gate = nn.Linear(num_channels * 2, self.num_splits)
         elif gate_type == "2layer-fc-SiLu":
             self.gate = nn.Sequential(
                 nn.Linear(num_channels * 2, num_channels * 2),
                 nn.SiLU(inplace=True),
-                nn.Linear(num_channels * 2, 2),
+                nn.Linear(num_channels * 2, self.num_splits),
             )
         elif gate_type == "2layer-fc-ReLu":
             self.gate = nn.Sequential(
                 nn.Linear(num_channels * 2, num_channels * 2),
                 nn.ReLU(inplace=True),
-                nn.Linear(num_channels * 2, 2),
+                nn.Linear(num_channels * 2, self.num_splits),
             )
         else:
             raise NotImplementedError()
@@ -50,9 +52,9 @@ class DualGrainHybridRouter(nn.Module):
             raise NotImplementedError()
         
         self.entropy_gate = nn.Sequential(
-                nn.Linear(1, 2),
+                nn.Linear(1, 2 * self.num_splits),
                 nn.ReLU(inplace=True),
-                nn.Linear(2, 2),
+                nn.Linear(2 * self.num_splits, self.num_splits),
             )
 
         self.response_gate = nn.Parameter(torch.zeros(1)) 
@@ -64,7 +66,6 @@ class DualGrainHybridRouter(nn.Module):
 
         avg_h_fine = self.gate_pool(h_fine)
 
-        # h_logistic = torch.cat([h_coarse, avg_h_fine], dim=1).permute(0,2,3,1)
         h_logistic = torch.cat([avg_h_fine, h_coarse], dim=1).permute(0,2,3,1)
 
         gate = self.gate(h_logistic)
