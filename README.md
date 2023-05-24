@@ -1,4 +1,4 @@
-# DynamicVectorQuantization (CVPR 2023 highlight)
+# DynamicVectorQuantization (CVPR 2023 highlight) (working in progress)
 
 Offical PyTorch implementation of our CVPR 2023 highlight paper "[Towards Accurate Image Coding: Improved Autoregressive Image Generation with Dynamic Vector Quantization](https://openaccess.thecvf.com/content/CVPR2023/papers/Huang_Towards_Accurate_Image_Coding_Improved_Autoregressive_Image_Generation_With_Dynamic_CVPR_2023_paper.pdf)".
 
