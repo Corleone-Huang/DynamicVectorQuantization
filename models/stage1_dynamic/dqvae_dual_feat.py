@@ -1,9 +1,8 @@
 import torch
 import pytorch_lightning as pl
-from functools import partial
 from utils.utils import instantiate_from_config
 
-from modules.dynamic_modules0.utils import draw_dual_grain_256res, draw_dual_grain_256res_color
+from modules.dynamic_modules.utils import draw_dual_grain_256res, draw_dual_grain_256res_color
 from models.stage1.utils import Scheduler_LinearWarmup, Scheduler_LinearWarmup_CosineDecay
 
 class DualGrainVQModel(pl.LightningModule):

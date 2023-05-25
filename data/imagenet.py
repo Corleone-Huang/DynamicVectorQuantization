@@ -3,14 +3,12 @@ from torch.utils.data import Dataset, DataLoader
 import os, tarfile, glob, shutil
 import numpy as np
 
-import torch
 import os, sys
 sys.path.append(os.getcwd())
 from data.data_utils import retrieve
 import data.data_utils as bdu
 from data.imagenet_base import ImagePaths
 from data.default import DefaultDataPath
-import torchvision
 import tqdm 
 
 
@@ -244,24 +242,24 @@ if __name__ == "__main__":
     dloader = DataLoader(dset, batch_size=4, num_workers=0, shuffle=True)
     dloader_val = DataLoader(dset_val, batch_size=4, num_workers=0, shuffle=True)
     
-    for i, data in enumerate(dloader):
-        print(data)
-        x = data["image"]
+    # for i, data in enumerate(dloader):
+    #     print(data)
+    #     x = data["image"]
 
-        if x.size(1) != 3:
-            x = x.permute(0, 3, 1, 2).to(memory_format=torch.contiguous_format).float()
+    #     if x.size(1) != 3:
+    #         x = x.permute(0, 3, 1, 2).to(memory_format=torch.contiguous_format).float()
 
-        torchvision.utils.save_image(x, "temp/imagenet_norm.png", normalize=True)
-        torchvision.utils.save_image(x, "temp/imagenet.png", normalize=False)
-        break
+    #     torchvision.utils.save_image(x, "temp/imagenet_norm.png", normalize=True)
+    #     torchvision.utils.save_image(x, "temp/imagenet.png", normalize=False)
+    #     break
     
-    for i, data in enumerate(dloader_val):
-        print(data)
-        x = data["image"]
+    # for i, data in enumerate(dloader_val):
+    #     print(data)
+    #     x = data["image"]
 
-        if x.size(1) != 3:
-            x = x.permute(0, 3, 1, 2).to(memory_format=torch.contiguous_format).float()
+    #     if x.size(1) != 3:
+    #         x = x.permute(0, 3, 1, 2).to(memory_format=torch.contiguous_format).float()
 
-        torchvision.utils.save_image(x, "temp/imagenet_norm_val.png", normalize=True)
-        torchvision.utils.save_image(x, "temp/imagenet_val.png", normalize=False)
-        break
+    #     torchvision.utils.save_image(x, "temp/imagenet_norm_val.png", normalize=True)
+    #     torchvision.utils.save_image(x, "temp/imagenet_val.png", normalize=False)
+    #     break

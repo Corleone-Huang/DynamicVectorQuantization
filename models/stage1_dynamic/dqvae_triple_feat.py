@@ -1,11 +1,17 @@
-import math
 import torch
-import torch.nn.functional as F
 import pytorch_lightning as pl
 from functools import partial
 from utils.utils import instantiate_from_config
 from modules.dynamic_modules0.utils import draw_triple_grain_256res, draw_triple_grain_256res_color
-from models.stage1.utils import Scheduler_LinearWarmup, Scheduler_LinearWarmup_CosineDecay
+
+def linear_warmup(warmup_steps):
+    def linear_warmup_fn(warmup_steps, step):
+        if step < warmup_steps:
+            return float(step) / float(max(1, warmup_steps))
+        else:
+            return 1.0
+    return partial(linear_warmup_fn, warmup_steps)
+
 
 class TripleGrainVQModel(pl.LightningModule):
     def __init__(self,
@@ -23,7 +29,6 @@ class TripleGrainVQModel(pl.LightningModule):
                  monitor = None,
                  warmup_epochs = 0,
                  loss_with_epoch = True,
-                 scheduler_type = "linear-warmup_cosine-decay",
                  ):
         super().__init__()
         self.image_key = image_key
@@ -45,7 +50,6 @@ class TripleGrainVQModel(pl.LightningModule):
         # for learning rate scheduler
         self.warmup_epochs = warmup_epochs
         self.loss_with_epoch = loss_with_epoch
-        self.scheduler_type = scheduler_type
 
     def init_from_ckpt(self, path, ignore_keys=list()):
         sd = torch.load(path, map_location="cpu")["state_dict"]
@@ -69,19 +73,19 @@ class TripleGrainVQModel(pl.LightningModule):
         quant, emb_loss, info = self.quantize(x=h, temp=self.quant_sample_temperature, codebook_mask=codebook_mask)
         return quant, emb_loss, info, grain_indices, gate
 
-    def decode(self, quant, grain_indices=None):
+    def decode(self, quant):
         quant = self.post_quant_conv(quant)
-        dec = self.decoder(quant, grain_indices)
+        dec = self.decoder(quant)
         return dec
 
-    def decode_code(self, code_b, grain_indices=None):
+    def decode_code(self, code_b):
         quant_b = self.quantize.embed_code(code_b)
-        dec = self.decode(quant_b, grain_indices)
+        dec = self.decode(quant_b)
         return dec
 
     def forward(self, input):
         quant, diff, _, grain_indices, gate = self.encode(input)
-        dec = self.decode(quant, grain_indices)
+        dec = self.decode(quant)
         return dec, diff, grain_indices, gate
 
     def get_input(self, batch, k):
@@ -168,24 +172,23 @@ class TripleGrainVQModel(pl.LightningModule):
         
         warmup_steps = self.steps_per_epoch * self.warmup_epochs
 
-        if self.scheduler_type == "linear-warmup":
-            scheduler_ae = {
-                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_ae, Scheduler_LinearWarmup(warmup_steps)), "interval": "step", "frequency": 1,
-            }
-            scheduler_disc = {
-                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_disc, Scheduler_LinearWarmup(warmup_steps)), "interval": "step", "frequency": 1,
-            }
-        elif self.scheduler_type == "linear-warmup_cosine-decay":
-            multipler_min = self.min_learning_rate / self.learning_rate
-            scheduler_ae = {
-                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_ae, Scheduler_LinearWarmup_CosineDecay(warmup_steps=warmup_steps, max_steps=self.training_steps, multipler_min=multipler_min)), "interval": "step", "frequency": 1,
-            }
-            scheduler_disc = {
-                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_disc, Scheduler_LinearWarmup_CosineDecay(warmup_steps=warmup_steps, max_steps=self.training_steps, multipler_min=multipler_min)), "interval": "step", "frequency": 1,
-            }
-        else:
-            raise NotImplementedError()
-
+        scheduler_ae = {
+            "scheduler": torch.optim.lr_scheduler.LambdaLR(
+                opt_ae,
+                linear_warmup(warmup_steps),
+            ),
+            "interval": "step",
+            "frequency": 1,
+        }
+        scheduler_disc = {
+            "scheduler": torch.optim.lr_scheduler.LambdaLR(
+                opt_ae,
+                linear_warmup(warmup_steps),
+            ),
+            "interval": "step",
+            "frequency": 1,
+        }
+        
         return [opt_ae, opt_disc], [scheduler_ae, scheduler_disc]
 
     def get_last_layer(self):
@@ -203,7 +206,7 @@ class TripleGrainVQModel(pl.LightningModule):
             xrec = self.to_rgb(xrec)
         log["inputs"] = x
         log["reconstructions"] = xrec
-        # log["grain"] = draw_triple_grain_256res(images=x.clone(), indices=grain_indices)
+        log["grain"] = draw_triple_grain_256res(images=x.clone(), indices=grain_indices)
         log["grain_color"] = draw_triple_grain_256res_color(images=x.clone(), indices=grain_indices)
         return log
     

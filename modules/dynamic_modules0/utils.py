@@ -196,11 +196,3 @@ def gumbel_softmax(logits, temperature=1, hard=False):
     # Set gradients w.r.t. y_hard gradients w.r.t. y
     y_hard = (y_hard - y).detach() + y
     return y_hard
-
-if __name__ == "__main__":
-    test_image_path = "/home/huangmq/git_repo/AdaptiveVectorQuantization/temp/real_image.png"
-    indices = torch.randint(0, 3, (4, 8, 8))  # .repeat_interleave(32, dim=-2).repeat_interleave(32, dim=-1)
-    # images = draw_triple_grain_256res(indices=indices)
-    # images = draw_dual_grain_256res_color(indices=indices)
-    images = draw_triple_grain_256res_color(indices=indices)
-    torchvision.utils.save_image(images, "temp/test_draw_triple_grain.png")

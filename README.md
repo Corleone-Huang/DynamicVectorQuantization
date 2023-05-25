@@ -18,11 +18,56 @@ conda env create -f environment.yml
 ```
 
 # Data Preparation
+Prepare dataset as follows, then change the corresponding datapath in `data/default.py`.
+
 ## ImageNet
+Prepare ImageNet dataset structure as follows:
 
+```
+${Your Data Root Path}/ImageNet/
+├── train
+│   ├── n01440764
+│   |   |── n01440764_10026.JPEG
+│   |   |── n01440764_10027.JPEG
+│   |   |── ...
+│   ├── n01443537
+│   |   |── n01443537_2.JPEG
+│   |   |── n01443537_16.JPEG
+│   |   |── ...
+│   ├── ...
+├── val
+│   ├── n01440764
+│   |   |── ILSVRC2012_val_00000293.JPEG
+│   |   |── ILSVRC2012_val_00002138.JPEG
+│   |   |── ...
+│   ├── n01443537
+│   |   |── ILSVRC2012_val_00000236.JPEG
+│   |   |── ILSVRC2012_val_00000262.JPEG
+│   |   |── ...
+│   ├── ...
+├── imagenet_idx_to_synset.yml
+├── synset_human.txt
+```
 
-# Training and Evaluation of DQVAE
+## FFHQ
+The FFHQ dataset could be obtained from the [FFHQ repository](https://github.com/NVlabs/ffhq-dataset). Then prepare the dataset structure as follows:
+```
+${Your Data Root Path}/FFHQ/
+├── assets
+│   ├── ffhqtrain.txt
+│   ├── ffhqvalidation.txt
+├── FFHQ
+│   ├── 00000.png
+│   ├── 00001.png
+```
 
+# Training of DQVAE
+## Training DQVAE with dual granularities (downsampling factor of F=16 and F=8)
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train.py --gpus -1 --base configs/stage1/dqvae-dual-r-05_imagenet.yml --max_epochs 50
+```
+The target ratio for the finer granularity could be set in `model.params.lossconfig.params.budget_loss_config.params.target_ratio`.
 
+## Training DQVAE with triple granularities (downsampling factor of F=32, F=16, F=8)
 
 # Training and Evaluation of DQ-Transformer
