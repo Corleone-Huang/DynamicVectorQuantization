@@ -215,7 +215,7 @@ if __name__ == "__main__":
             "target": "utils.logger.CaptionImageLogger",
             "params": {
                 "type": opt.logtype,
-                "batch_frequency": 5000,
+                "batch_frequency": 50, # 00,
                 "max_images": 16,
                 "clamp": True
             }

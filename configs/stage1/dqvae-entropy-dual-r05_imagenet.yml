@@ -1,25 +1,26 @@
 model:
   base_learning_rate: 4.5e-06
-  target: models.stage1_dynamic.dqvae_triple_feat.TripleGrainVQModel
+  target: models.stage1_dynamic.dqvae_dual_entropy.DualGrainVQModel
   params:
     encoderconfig:
-      target: modules.dynamic_modules.EncoderTriple.TripleGrainEncoder
+      target: modules.dynamic_modules.EncoderDual.DualGrainEncoder
       params:
         ch: 128
-        ch_mult: [1,1,2,2,4,4]
+        ch_mult: [1,1,2,2,4]
         num_res_blocks: 2
-        attn_resolutions: [8,16,32]
+        attn_resolutions: [16, 32]
         dropout: 0.0
         resamp_with_conv: true
         in_channels: 3
         resolution: 256
         z_channels: 256
+        update_router: False
         router_config:
-          target: modules.dynamic_modules.RouterTriple.TripleGrainFeatureRouter
+          target: modules.dynamic_modules.RouterDual.DualGrainDynamicEntropyRouter
           params:
-            num_channels: 256
-            normalization_type: group-32
-            gate_type: 2layer-fc-SiLu
+            json_path: scripts/tools/thresholds/entropy_thresholds_imagenet_train_patch-16.json
+            fine_grain_ratito_min: 0.01
+            fine_grain_ratito_max: 0.99
     decoderconfig:
       target: modules.dynamic_modules.DecoderPositional.Decoder
       params:
@@ -53,16 +54,14 @@ model:
         disc_conditional: false
         disc_loss: hinge
         disc_weight_max: 0.75
-        budget_loss_config:
-          target: modules.dynamic_modules.budget.BudgetConstraint_NormedSeperateRatioMSE_TripleGrain
-          params:
-            target_fine_ratio: 0.3
-            target_median_ratio: 0.3
-            gamma: 1.0
-            min_grain_size: 8
-            median_grain_size: 16
-            max_grain_size: 32
-
+        # budget_loss_config:
+        #   target: modules.dynamic_modules.budget.BudgetConstraint_RatioMSE_DualGrain
+        #   params:
+        #     target_ratio: 0.5
+        #     gamma: 10.0
+        #     min_grain_size: 16
+        #     max_grain_size: 32
+        #     calculate_all: True
     vqconfig:
       target: modules.vector_quantization.quantize2_mask.VectorQuantize2
       params:

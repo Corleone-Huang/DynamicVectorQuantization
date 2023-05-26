@@ -2,7 +2,8 @@ import torch
 import pytorch_lightning as pl
 from functools import partial
 from utils.utils import instantiate_from_config
-from modules.dynamic_modules0.utils import draw_triple_grain_256res, draw_triple_grain_256res_color
+from modules.dynamic_modules.utils import draw_triple_grain_256res, draw_triple_grain_256res_color
+from models.stage1.utils import Scheduler_LinearWarmup, Scheduler_LinearWarmup_CosineDecay
 
 def linear_warmup(warmup_steps):
     def linear_warmup_fn(warmup_steps, step):
@@ -29,6 +30,7 @@ class TripleGrainVQModel(pl.LightningModule):
                  monitor = None,
                  warmup_epochs = 0,
                  loss_with_epoch = True,
+                 scheduler_type = "linear-warmup_cosine-decay",
                  ):
         super().__init__()
         self.image_key = image_key
@@ -50,6 +52,7 @@ class TripleGrainVQModel(pl.LightningModule):
         # for learning rate scheduler
         self.warmup_epochs = warmup_epochs
         self.loss_with_epoch = loss_with_epoch
+        self.scheduler_type = scheduler_type
 
     def init_from_ckpt(self, path, ignore_keys=list()):
         sd = torch.load(path, map_location="cpu")["state_dict"]
@@ -63,7 +66,7 @@ class TripleGrainVQModel(pl.LightningModule):
         print(f"Restored from {path}")
 
     def encode(self, x):
-        h_dict = self.encoder(x)
+        h_dict = self.encoder(x, None)
         h = h_dict["h_triple"]
         grain_indices = h_dict["indices"]
         codebook_mask = h_dict["codebook_mask"]
@@ -73,9 +76,9 @@ class TripleGrainVQModel(pl.LightningModule):
         quant, emb_loss, info = self.quantize(x=h, temp=self.quant_sample_temperature, codebook_mask=codebook_mask)
         return quant, emb_loss, info, grain_indices, gate
 
-    def decode(self, quant):
+    def decode(self, quant, grain_indices=None):
         quant = self.post_quant_conv(quant)
-        dec = self.decoder(quant)
+        dec = self.decoder(quant, grain_indices=None)
         return dec
 
     def decode_code(self, code_b):
@@ -85,7 +88,7 @@ class TripleGrainVQModel(pl.LightningModule):
 
     def forward(self, input):
         quant, diff, _, grain_indices, gate = self.encode(input)
-        dec = self.decode(quant)
+        dec = self.decode(quant, grain_indices)
         return dec, diff, grain_indices, gate
 
     def get_input(self, batch, k):
@@ -172,23 +175,24 @@ class TripleGrainVQModel(pl.LightningModule):
         
         warmup_steps = self.steps_per_epoch * self.warmup_epochs
 
-        scheduler_ae = {
-            "scheduler": torch.optim.lr_scheduler.LambdaLR(
-                opt_ae,
-                linear_warmup(warmup_steps),
-            ),
-            "interval": "step",
-            "frequency": 1,
-        }
-        scheduler_disc = {
-            "scheduler": torch.optim.lr_scheduler.LambdaLR(
-                opt_ae,
-                linear_warmup(warmup_steps),
-            ),
-            "interval": "step",
-            "frequency": 1,
-        }
-        
+        if self.scheduler_type == "linear-warmup":
+            scheduler_ae = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_ae, Scheduler_LinearWarmup(warmup_steps)), "interval": "step", "frequency": 1,
+            }
+            scheduler_disc = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_disc, Scheduler_LinearWarmup(warmup_steps)), "interval": "step", "frequency": 1,
+            }
+        elif self.scheduler_type == "linear-warmup_cosine-decay":
+            multipler_min = self.min_learning_rate / self.learning_rate
+            scheduler_ae = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_ae, Scheduler_LinearWarmup_CosineDecay(warmup_steps=warmup_steps, max_steps=self.training_steps, multipler_min=multipler_min)), "interval": "step", "frequency": 1,
+            }
+            scheduler_disc = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(opt_disc, Scheduler_LinearWarmup_CosineDecay(warmup_steps=warmup_steps, max_steps=self.training_steps, multipler_min=multipler_min)), "interval": "step", "frequency": 1,
+            }
+        else:
+            raise NotImplementedError()
+
         return [opt_ae, opt_disc], [scheduler_ae, scheduler_disc]
 
     def get_last_layer(self):

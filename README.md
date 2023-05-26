@@ -66,8 +66,23 @@ ${Your Data Root Path}/FFHQ/
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train.py --gpus -1 --base configs/stage1/dqvae-dual-r-05_imagenet.yml --max_epochs 50
 ```
-The target ratio for the finer granularity could be set in `model.params.lossconfig.params.budget_loss_config.params.target_ratio`.
+The target ratio for the finer granularity (F=8) could be set in `model.params.lossconfig.params.budget_loss_config.params.target_ratio`.
 
 ## Training DQVAE with triple granularities (downsampling factor of F=32, F=16, F=8)
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train.py --gpus -1 --base configs/stage1/dqvae-triple-r-03-03_imagenet.yml --max_epochs 50
+```
+The target ratio for the finest granularity (F=8) could be set in `model.params.lossconfig.params.budget_loss_config.params.target_fine_ratio`. The target ratio for the median granularity (F=16) could be set in `model.params.lossconfig.params.budget_loss_config.params.target_median_ratio`.
 
-# Training and Evaluation of DQ-Transformer
+## *A Better Version of DQVAE*
+Here we provide a better version of DQVAE compare with the one we proposed in the paper, which leads to much stable training results and also slight better reconstruction quality. To be specific, we assign the granularity of each region directly according to their image entropy instead of the features extracted from the encoder.
+
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train.py --gpus -1 --base configs/stage1/dqvae-entropy-dual-r05_imagenet.yml --max_epochs 50
+```
+The target ratio for the finer granularity (F=8) is already fixed by `scripts/tools/thresholds/entropy_thresholds_imagenet_train_patch-16.json`.
+
+## Visualization of Variable-length Coding
+![image](assets/dynamic_visual2.png)
+
+# Training of DQ-Transformer

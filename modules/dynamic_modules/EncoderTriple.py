@@ -92,11 +92,7 @@ class TripleGrainEncoder(pl.LightningModule):
         self.router = instantiate_from_config(router_config)
 
 
-    def forward(self, x, x_entropy):
-        hw, hw0 = x.size(-1), x_entropy.size(-1)
-        x_entropy_expand = x_entropy.unsqueeze(1).repeat_interleave(hw // hw0, -1).repeat_interleave(hw // hw0, -2)
-
-        x = torch.cat([x, x_entropy_expand], dim=1)
+    def forward(self, x, x_entropy=None):
         assert x.shape[2] == x.shape[3] == self.resolution, "{}, {}, {}".format(x.shape[2], x.shape[3], self.resolution)
 
         # timestep embedding

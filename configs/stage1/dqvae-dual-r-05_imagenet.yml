@@ -89,10 +89,10 @@ data:
       params:
         config:
           is_eval: False
-          size: 512
+          size: 256
     validation:
       target: data.imagenet.ImageNetValidation
       params:
         config:
           is_eval: True
-          size: 512
+          size: 256
