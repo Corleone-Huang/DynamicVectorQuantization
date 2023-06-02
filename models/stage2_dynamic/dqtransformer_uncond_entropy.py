@@ -165,7 +165,7 @@ class Dualformer(pl.LightningModule):
 
     @torch.no_grad()
     def encode_to_z(self, x):
-        quant, emb_loss, info, grain_indices, gate = self.first_stage_model.encode(x)
+        quant, emb_loss, info, grain_indices, gate, _ = self.first_stage_model.encode(x)
         indices = info[2]
         permuted_out = self.permuter(indices=indices, grain_indices=grain_indices)
         return quant, permuted_out
@@ -173,7 +173,9 @@ class Dualformer(pl.LightningModule):
     @torch.no_grad()
     def decode_to_img(self, coarse_content, fine_content, coarse_position, fine_position):
         reproduced_indices = self.permuter.forward_back(coarse_content, fine_content, coarse_position, fine_position)
-        reproduced_quant, _ = self.first_stage_model.get_code_emb_with_depth(reproduced_indices)
+        # reproduced_indices = rearrange(reproduced_indices, "b h w -> b (h w)")
+        reproduced_quant = self.first_stage_model.get_code_emb_with_depth(reproduced_indices)
+        print(reproduced_quant.size(), "....................................................")
         reproduced_rec = self.first_stage_model.decode(reproduced_quant.permute(0, 3, 1, 2))
         return reproduced_rec
     

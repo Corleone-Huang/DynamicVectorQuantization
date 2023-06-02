@@ -16,11 +16,10 @@ model:
         z_channels: 256
         update_router: False
         router_config:
-          target: modules.dynamic_modules.RouterDual.DualGrainDynamicEntropyRouter
+          target: modules.dynamic_modules.RouterDual.DualGrainFixedEntropyRouter
           params:
             json_path: scripts/tools/thresholds/entropy_thresholds_imagenet_train_patch-16.json
-            fine_grain_ratito_min: 0.01
-            fine_grain_ratito_max: 0.99
+            fine_grain_ratito: 0.5
     decoderconfig:
       target: modules.dynamic_modules.DecoderPositional.Decoder
       params:
@@ -64,6 +63,7 @@ model:
         #     calculate_all: True
     vqconfig:
       target: modules.vector_quantization.quantize2_mask.VectorQuantize2
+      # target: modules.vector_quantization.quantize_codebook_mask.MaskVectorQuantize
       params:
         codebook_size: 1024
         codebook_dim: 256
@@ -83,7 +83,7 @@ model:
 data:
   target: data.build.DataModuleFromConfig
   params:
-    batch_size: 1 # 30
+    batch_size: 2 # 30
     num_workers: 8
     train:
       target: data.imagenet.ImageNetTrain

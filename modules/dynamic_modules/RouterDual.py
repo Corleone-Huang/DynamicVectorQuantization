@@ -56,23 +56,23 @@ class DualGrainFixedEntropyRouter(nn.Module):
         gate = torch.cat([gate_coarse, gate_fine], dim=-1)
         return gate
     
-class DualGrainDynamicEntropyRouter(nn.Module):
-    def __init__(self, json_path, fine_grain_ratito_min=0.01, fine_grain_ratito_max=0.99):
-        super().__init__()
-        with open(json_path, "r", encoding="utf-8") as f:
-            self.content = json.load(f)
-        self.fine_grain_ratito_min = int(fine_grain_ratito_min * 100)  # inclusive
-        self.fine_grain_ratito_max = int(fine_grain_ratito_max * 100) + 1 # exclusive
+# class DualGrainDynamicEntropyRouter(nn.Module):
+#     def __init__(self, json_path, fine_grain_ratito_min=0.01, fine_grain_ratito_max=0.99):
+#         super().__init__()
+#         with open(json_path, "r", encoding="utf-8") as f:
+#             self.content = json.load(f)
+#         self.fine_grain_ratito_min = int(fine_grain_ratito_min * 100)  # inclusive
+#         self.fine_grain_ratito_max = int(fine_grain_ratito_max * 100) + 1 # exclusive
     
-    def forward(self, h_fine=None, h_coarse=None, entropy=None):
-        # fine_grain_ratito = torch.randint(low=self.fine_grain_ratito_min, high=self.fine_grain_ratito_max, size=(1))
-        fine_grain_ratito = np.random.randint(low=self.fine_grain_ratito_min, high=self.fine_grain_ratito_max)
-        fine_grain_threshold = self.content["{}".format(str(fine_grain_ratito))]
+#     def forward(self, h_fine=None, h_coarse=None, entropy=None):
+#         # fine_grain_ratito = torch.randint(low=self.fine_grain_ratito_min, high=self.fine_grain_ratito_max, size=(1))
+#         fine_grain_ratito = np.random.randint(low=self.fine_grain_ratito_min, high=self.fine_grain_ratito_max)
+#         fine_grain_threshold = self.content["{}".format(str(fine_grain_ratito))]
 
-        gate_fine = (entropy > fine_grain_threshold).bool().long().unsqueeze(-1)
-        gate_coarse = (entropy <= fine_grain_threshold).bool().long().unsqueeze(-1)
-        gate = torch.cat([gate_coarse, gate_fine], dim=-1)
-        return gate
+#         gate_fine = (entropy > fine_grain_threshold).bool().long().unsqueeze(-1)
+#         gate_coarse = (entropy <= fine_grain_threshold).bool().long().unsqueeze(-1)
+#         gate = torch.cat([gate_coarse, gate_fine], dim=-1)
+#         return gate
     
-if __name__ == "__main__":
-    model = DualGrainFixedEntropyRouter(json_path="scripts/tools/thresholds/entropy_thresholds_imagenet_train_patch-16.json", fine_grain_ratito=0.5)
+# if __name__ == "__main__":
+#     model = DualGrainFixedEntropyRouter(json_path="scripts/tools/thresholds/entropy_thresholds_imagenet_train_patch-16.json", fine_grain_ratito=0.5)

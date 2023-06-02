@@ -256,4 +256,7 @@ class DualGrainVQModel(pl.LightningModule):
         return log
     
     def get_code_emb_with_depth(self, code):
-        return self.quantize.embed_code_with_depth(code)
+        embed = self.quantize.get_codebook_entry(code)
+        # embed = rearrange(embed, "b h w c -> b c h w")
+        return embed
+        # return self.quantize.embed_code_with_depth(code)

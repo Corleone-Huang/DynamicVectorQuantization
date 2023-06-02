@@ -80,9 +80,13 @@ Here we provide a better version of DQVAE compare with the one we proposed in th
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train.py --gpus -1 --base configs/stage1/dqvae-entropy-dual-r05_imagenet.yml --max_epochs 50
 ```
-The target ratio for the finer granularity (F=8) is already fixed by `scripts/tools/thresholds/entropy_thresholds_imagenet_train_patch-16.json`.
+The target ratio for the finer granularity (F=8) could be set in `model.params.encoderconfig.params.router_config.params.fine_grain_ratito`. The distribution of image entropy is pre-calculated in `scripts/tools/thresholds/entropy_thresholds_imagenet_train_patch-16.json`.
 
 ## Visualization of Variable-length Coding
 ![image](assets/dynamic_visual2.png)
 
 # Training of DQ-Transformer
+
+## Unconditional Generation
+
+## Class-conditional Generation
