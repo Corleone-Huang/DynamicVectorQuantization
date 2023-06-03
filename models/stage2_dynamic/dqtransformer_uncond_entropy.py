@@ -173,9 +173,7 @@ class Dualformer(pl.LightningModule):
     @torch.no_grad()
     def decode_to_img(self, coarse_content, fine_content, coarse_position, fine_position):
         reproduced_indices = self.permuter.forward_back(coarse_content, fine_content, coarse_position, fine_position)
-        # reproduced_indices = rearrange(reproduced_indices, "b h w -> b (h w)")
         reproduced_quant = self.first_stage_model.get_code_emb_with_depth(reproduced_indices)
-        print(reproduced_quant.size(), "....................................................")
         reproduced_rec = self.first_stage_model.decode(reproduced_quant.permute(0, 3, 1, 2))
         return reproduced_rec
     
@@ -260,9 +258,8 @@ class Dualformer(pl.LightningModule):
 
         c_coarse, c_fine, c_pos_coarse, c_pos_fine, c_seg_coarse, c_seg_fine = self.encode_to_c(c)
 
-        import time
-
-        start_time = time.time()
+        # import time
+        # start_time = time.time()
         coarse_content, fine_content, coarse_position, fine_position = self.sample_from_scratch(
             c_coarse, c_fine, c_pos_coarse, c_pos_fine, c_seg_coarse, c_seg_fine, 
             temperature = temperature if temperature is not None else 1.0,
@@ -275,8 +272,8 @@ class Dualformer(pl.LightningModule):
             fix_fine_position = True,
         )
         log["samples_fixed_fine_position"] = self.decode_to_img(coarse_content, fine_content, coarse_position, fine_position)
-        end_time = time.time()
-        print(end_time-start_time)
+        # end_time = time.time()
+        # print(end_time-start_time)
         # exit()
 
         coarse_content, fine_content, coarse_position, fine_position = self.sample_from_scratch(

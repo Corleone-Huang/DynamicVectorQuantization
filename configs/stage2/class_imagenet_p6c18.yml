@@ -1,14 +1,14 @@
 model:
   learning_rate: 0.0005
   min_learning_rate: 0.0
-  target: models.stage2_dynamic.dqtransformer_uncond_entropy.Dualformer
+  target: models.stage2_dynamic.dqtransformer_class2_entropy.Dualformer
   params:
     transformer_config:
       target: modules.dynamic_modules.stackgpt.StackGPT
       params:
-        vocab_size: 1027  # 1024 + 1 (pad) + 1 (sos) + 1 (eos)
-        coarse_position_size: 259  # 256 + 1 (pad) + 1 (sos) + 1 (eos)
-        fine_position_size: 1027  # 1024 + 1 (pad) + 1 (sos) + 1 (eos)
+        vocab_size: 2026  # 1024 + 1 (pad) + 1 (eos) + 1000 (class number)
+        coarse_position_size: 1258  # 256 + 1 (pad) + 1 (eos) + 1000 (class number)
+        fine_position_size: 2026  # 1024 + 1 (pad) + 1 (eos) + 1000 (class number)
         segment_size: 2  # coarse and fine
         block_size: 2048  # as large as possible
         position_layer: 6  # 12
@@ -80,13 +80,13 @@ model:
         # warmup_epochs: 0.1
         # scheduler_type: linear-warmup_cosine-decay
 
-    uncond_stage_config:
-      target: modules.dynamic_modules.label_provider.PositionAwareSOSProvider
+    class_cond_stage_config:
+      target: modules.dynamic_modules.label_provider.ClassAwareSOSProvider
       params:
-        coarse_sos: 1026
-        coarse_pos_sos: 258
-        fine_sos: 1026
-        fine_pos_sos: 1026
+        n_classes: 1000
+        threshold_content: 1026
+        threshold_coarse_position: 258
+        threshold_fine_position: 1026
         coarse_seg_sos: 0
         fine_seg_sos: 1
 
